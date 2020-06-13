@@ -1,3 +1,10 @@
+/*main.cpp*/
+
+// Everardo Gutierrez
+// Project Show Streaming LookUp
+//  Program is to read in file containing shows streamed on multiple platforms. 
+//  User can enter in multiple commands to get show titles based on criteria
+//  entered and show what streaming platforms they are available on.
 #include <iostream>
 #include <fstream> 
 #include <sstream>
@@ -12,6 +19,9 @@
 #include "hashmap.h"
 using namespace std;
 
+//
+// Show Structure
+//
 struct Show{
     int id, year;
     float imdb;
@@ -25,6 +35,14 @@ struct Show{
     }
 };
 
+/*
+    Function: isNumeric 
+    Use regex to determine if string passed as parameter is an integer
+    Parameters:
+        s - string 
+    Returns:
+        boolean true | false
+*/
 bool isNumeric(string s){
     regex pattern("[[:d:]]+", regex::ECMAScript);
 
@@ -36,11 +54,21 @@ bool isNumeric(string s){
 		return false;
 }
 
+/*
+    Function: readFile 
+    Read data from the file passed and create an instance of show structure type.
+    Instance is then inserted into the hash table based on the id that gets hashed.
+    Parameters:
+        fileName - string
+        shows - hashmap 
+    Returns:
+        boolean - true | false
+*/
 bool readFile(string fileName, hashmap<int, Show>& shows){
     ifstream infile(fileName);
     string line;
     int countShows = 0;
-    if(!infile.good()){
+    if(!infile.good()){ // file could not be opened return false
         cout << "**Error: unable to open '" << fileName << "'..." << endl;
         return false;
     }
@@ -50,8 +78,8 @@ bool readFile(string fileName, hashmap<int, Show>& shows){
     string title, age, rotten;
     string netflix, hulu, prime, disney;
     string type;
-    getline(infile, line);
-    while(getline(infile, line)){
+    getline(infile, line); // skip first line (column names)
+    while(getline(infile, line)){ // read each line from the line
         stringstream s(line);
         getline(s, id, ',');
         getline(s, title, ',');
@@ -65,6 +93,7 @@ bool readFile(string fileName, hashmap<int, Show>& shows){
         getline(s, disney, ',');
         getline(s, type, ',');
         
+        // create instance of show and set its values to the ones read
         Show show;
         show.id = stoi(id);
         show.title = title;
@@ -77,13 +106,23 @@ bool readFile(string fileName, hashmap<int, Show>& shows){
         show.prime = stoi(prime);
         show.disney = stoi(disney);
 
+        // insert show into the hash table 
         shows.insert(show.id, show, HashId);
-        countShows++;
+        countShows++; //update number of shows read
     }
+    // Display the number of shows read from the file
     cout << "# of shows: " << countShows << endl;
     return true;
 }
 
+/*
+    Function: displayCommands 
+    Display commands available for user to enter
+    Parameters:
+        none
+    Returns:
+        void
+*/
 void displayCommands(){
     cout << "Available commands: " << endl;
     cout << "Enter 'help' to display all commands" << endl;
@@ -94,6 +133,16 @@ void displayCommands(){
     cout << "Enter Rotten Tomatoes rating to find really good shows (e.g. rotten 90)" << endl;
 }
 
+/*
+    Function: searchYear
+    Search for a particular year passed as parameter in the hash table
+    Displays all the shows that match the year passed.
+    Parameters:
+        command - string
+        shows - hashmap 
+    Returns:
+        none
+*/
 void searchYear(string command, hashmap<int, Show>& shows){
     stringstream ss(command);
     string com, year;
@@ -111,18 +160,22 @@ void searchYear(string command, hashmap<int, Show>& shows){
         return;
     }
     
-    vector<Show> yearShows;
-    unordered_set<int> keys;
+    vector<Show> yearShows; // vector to hold all movies that meet criteria passed
+    unordered_set<int> keys; // holds all keys from the hash table
     Show show;
-    keys = shows.getKeys();
+    keys = shows.getKeys(); // get all keys from the hash table
+    // loop through each key
     for(auto itr = keys.begin(); itr != keys.end(); itr++){
+        // search for the key in the hash table
         bool found = shows.search(*itr, show,HashId);
-        if(!found)
+        if(!found) // key could not be found move on to the next key
             continue;
-        if(show.year == yr)
+        if(show.year == yr) // key found determine if year meets criteria passed
             yearShows.push_back(show);
     }  
 
+    // loop through the vector that holds all show struct instances 
+    // displaying show title and what platforms they are streamed on
     cout << "Shows at your year request of: " << yr << endl;
     for(auto i = yearShows.begin(); i != yearShows.end();++i){
         cout << "Show Name: " << (*i).title << endl;
@@ -138,6 +191,16 @@ void searchYear(string command, hashmap<int, Show>& shows){
     }
 }
 
+/*
+    Function: ageSearch
+    Search for a particular age rating passed as parameter in the hash table
+    Displays all the shows that match the age rating passed.
+    Parameters:
+        command - string
+        shows - hashmap 
+    Returns:
+        none
+*/
 void ageSearch(string command, hashmap<int, Show>& shows){
     int age = stoi(command);
     int curAge;
@@ -179,6 +242,16 @@ void ageSearch(string command, hashmap<int, Show>& shows){
     }
 }
 
+/*
+    Function: greaterAgeSearch
+    Search for a all ages greater than or equal to the one passed as parameter 
+    in the hash table. Displays all the shows that match this criteria.
+    Parameters:
+        command - string
+        shows - hashmap 
+    Returns:
+        none
+*/
 void greaterAgeSearch(string command, hashmap<int, Show>& shows){
     command = command.erase(0,1);
     int age = stoi(command);
@@ -221,6 +294,16 @@ void greaterAgeSearch(string command, hashmap<int, Show>& shows){
     }
 }
 
+/*
+    Function: searchRating
+    Search for a particular IMDb rating passed as parameter in the hash table
+    Displays all the shows that match the IMDb rating passed.
+    Parameters:
+        command - string
+        shows - hashmap 
+    Returns:
+        none
+*/
 void searchRating(string command, hashmap<int, Show>& shows){
     stringstream ss(command);
     string com, rating;
@@ -261,6 +344,16 @@ void searchRating(string command, hashmap<int, Show>& shows){
     }
 }
 
+/*
+    Function: searchRotten
+    Search for a particular Rotten Tomatoe rating passed as parameter in the hash table
+    Displays all the shows that match the Rotten Tomatoe rating passed.
+    Parameters:
+        command - string
+        shows - hashmap 
+    Returns:
+        none
+*/
 void searchRotten(string command, hashmap<int, Show>& shows){
     stringstream ss(command);
     string com, rating;
@@ -305,6 +398,16 @@ void searchRotten(string command, hashmap<int, Show>& shows){
     }
 }
 
+/*
+    Function: searchTitle
+    Search for a particular show title passed as parameter in the hash table
+    Displays all the shows that match the show title passed.
+    Parameters:
+        command - string
+        shows - hashmap 
+    Returns:
+        none
+*/
 void searchTitle(string command, hashmap<int, Show>& shows){
     vector<Show> titleShows;
     unordered_set<int> keys;
@@ -340,30 +443,33 @@ int main(){
     string fileName = "Show_Streaming.csv";
     cout << "Reading in file " << fileName << "...." << endl;
     bool success = readFile(fileName, shows);
-    if(!success){
+    if(!success){ // determine if file can be read 
         cout << "File error occurred. Exiting program..." << endl;
         return 0;
     }
+
     string command;
     cout << "What we in the mood for today?" << endl;
     cout << "Please enter a command, help, or #> ";
-    getline(cin, command);
-    while(command != "#"){
-        if(command == "help"){
+    getline(cin, command); // read in users desired command
+
+    while(command != "#"){ // determine if user has asked to quit searching
+        if(command == "help"){ // display commands available
             displayCommands();
-        }else if(command.substr(0,4) == "year"){
+        }else if(command.substr(0,4) == "year"){ // user wants to search by year
             searchYear(command, shows);
-        }else if(isNumeric(command)){
+        }else if(isNumeric(command)){ // user wants to search by age rating
             ageSearch(command, shows);
-        }else if(command[0] == '>'){
+        }else if(command[0] == '>'){ // user wants to search by age rating greater than one entered
             greaterAgeSearch(command, shows);
-        }else if(command.substr(0,6) == "rating"){
+        }else if(command.substr(0,6) == "rating"){ // user wants to search by IMDb rating
             searchRating(command, shows);
-        }else if(command.substr(0,6) == "rotten"){
+        }else if(command.substr(0,6) == "rotten"){ // user wants to search by rotten tomatoe rating
             searchRotten(command, shows);
-        }else{
+        }else{ // default will look for show title 
             searchTitle(command, shows);
         }
+        // request users input once again
         cout << endl;
         cout << "What we in the mood for today?" << endl;
         cout << "Please enter a command, help, or #> ";
